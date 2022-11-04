@@ -132,4 +132,29 @@ app.get('/admin/best-profession', getProfile, async (req, res) => {
     res.json(result)
 })
 
+app.get('/admin/best-clients', getProfile, async (req, res) => {
+
+    const pattern = /\d{4}-\d{2}-\d{2}/
+
+    if (RegExp(pattern, 'g').exec(req.query.start) == null || RegExp(pattern, 'g').exec(req.query.end) == null) {
+        return res.status(400).json({message: "Please provide date ranges in this format: YYYY-MM-DD"})
+    }
+
+    const start = new Date(req.query.start)
+    const end = new Date(req.query.end)
+    const limit = req.query.limit ?? 2
+ 
+    const [result, metadata] = await sequelize.query(`
+        SELECT P.id, P.firstName || ' ' || P.lastName AS fullName, SUM(J.price) AS paid from jobs J
+        JOIN contracts C ON J.ContractId = C.id
+        JOIN profiles P ON C.ClientId = P.id
+        WHERE J.paid = true AND J.paymentDate BETWEEN "${start.toISOString()}" AND "${end.toISOString()}"
+        GROUP BY P.id
+        ORDER BY paid desc
+        LIMIT ${limit}
+    `);
+
+    res.json(result)
+})
+
 module.exports = app;
