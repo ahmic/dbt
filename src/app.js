@@ -63,4 +63,49 @@ app.get('/jobs/unpaid', getProfile, async (req, res) => {
     res.json(contracts.reduce((accumulator, current) => [...accumulator, ...current.Jobs], []))
 })
 
+app.get('/jobs/:job_id/pay', getProfile, async (req, res) => {
+    const {Profile, Job, Contract} = req.app.get('models')
+
+    if (req.profile.type != 'client') {
+        return res.status(403).json({message: "Only client can pay"})
+    }
+    
+    const client = req.profile
+    
+    const job = await Job.findOne({
+        where: {
+            id: req.params.job_id,
+            paid: null,
+        },
+        include: {
+            model: Contract,
+            where: {
+                ClientId: client.id
+            }
+        }
+    })
+
+    if (job == null) {
+        return res.status(404).json({message: "Job not found or is already paid"})
+    }
+
+    if (client.balance < job.price) {
+        return res.status(400).json({message: "Unable to process payment: low balance"})
+    }
+
+    const contractor = await Profile.findOne({where: {id: job.Contract.ContractorId}})
+
+    client.balance = client.balance - job.price
+    client.save()
+
+    contractor.balance = contractor.balance + job.price
+    contractor.save()
+
+    job.paid = true
+    job.save()
+
+    return res.status(200).json({message: "Job paid successfully"})
+    
+})
+
 module.exports = app;
