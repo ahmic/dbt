@@ -104,8 +104,32 @@ app.get('/jobs/:job_id/pay', getProfile, async (req, res) => {
     job.paid = true
     job.save()
 
-    return res.status(200).json({message: "Job paid successfully"})
-    
+    return res.status(200).json({message: "Job paid successfully"})  
+})
+
+
+app.get('/admin/best-profession', getProfile, async (req, res) => {
+
+    const pattern = /\d{4}-\d{2}-\d{2}/
+
+    if (RegExp(pattern, 'g').exec(req.query.start) == null || RegExp(pattern, 'g').exec(req.query.end) == null) {
+        return res.status(400).json({message: "Please provide date ranges in this format: YYYY-MM-DD"})
+    }
+
+    const start = new Date(req.query.start)
+    const end = new Date(req.query.end)
+ 
+    const [result, metadata] = await sequelize.query(`
+        SELECT P.profession, SUM(J.price) AS total from jobs J
+        JOIN contracts C ON J.ContractId = C.id
+        JOIN profiles P ON C.ContractorId = P.id
+        WHERE J.paid = true AND J.paymentDate BETWEEN "${start.toISOString()}" AND "${end.toISOString()}"
+        GROUP BY P.profession
+        ORDER BY total desc
+        LIMIT 1
+    `);
+
+    res.json(result)
 })
 
 module.exports = app;
