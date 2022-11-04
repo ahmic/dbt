@@ -2,9 +2,9 @@
 
 # My personal notes
 
-- Started to work on this task at 2022-11-03 00:15:00
+- Started to work on this task at 2022-11-04 00:15:00
 - Having troubles with sqlite3 install, must configure npm python path `npm config set python /usr/local/bin/python3` (took me 15 minutes to resolve the issue)
-- End at 2022-11-03 03:05:00
+- End at 2022-11-04 03:05:00
 
 
 
