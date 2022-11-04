@@ -27,7 +27,7 @@ app.get('/contracts/:id', getProfile, async (req, res) => {
     res.json(contract)
 })
 
-app.get('/contracts', getProfile ,async (req, res) =>{
+app.get('/contracts', getProfile, async (req, res) => {
     const {Contract} = req.app.get('models')
     const contracts = await Contract.findAll({where: {
         status: {
@@ -41,6 +41,26 @@ app.get('/contracts', getProfile ,async (req, res) =>{
     })
  
     res.json(contracts)
+})
+
+app.get('/jobs/unpaid', getProfile, async (req, res) => {
+    const {Contract, Job} = req.app.get('models')
+    const contracts = await Contract.findAll({where: {
+        status: 'in_progress',
+        [Op.or]: [
+          {ContractorId: req.profile.id},
+          {ClientId: req.profile.id}
+        ]
+        },
+        include: {
+            model: Job,
+            where: {
+                paid: null
+            }
+        }
+    })
+ 
+    res.json(contracts.reduce((accumulator, current) => [...accumulator, ...current.Jobs], []))
 })
 
 module.exports = app;
